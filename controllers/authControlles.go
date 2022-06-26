@@ -97,3 +97,77 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
+
+func Register(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+
+		temp, _ := template.ParseFiles("views/register.html")
+		temp.Execute(w, nil)
+
+	} else if r.Method == http.MethodPost {
+		// melakukan registrasi
+		r.ParseForm()
+
+		user := entities.User{
+			Nama:      r.Form.Get("nama"),
+			Email:     r.Form.Get("email"),
+			Username:  r.Form.Get("username"),
+			Password:  r.Form.Get("password"),
+			Cpassword: r.Form.Get("cpassword"),
+		}
+
+		errorMessages := make(map[string]interface{})
+
+		if user.Nama == "" {
+			errorMessages["Nama"] = "Nama harus diisi"
+		}
+		if user.Email == "" {
+			errorMessages["Email"] = "Email harus diisi"
+		}
+		if user.Username == "" {
+			errorMessages["Username"] = "Username harus diisi"
+		}
+		if user.Password == "" {
+			errorMessages["Password"] = "Password harus diisi"
+		}
+		if user.Cpassword == "" {
+			errorMessages["Cpassword"] = "Konfirmasi Password harus diisi"
+		} else {
+			if user.Cpassword != user.Password {
+				errorMessages["Cpassword"] = "Konfirmasi password tidak sama"
+			}
+		}
+
+		if len(errorMessages) > 0 {
+			// validasi form gagal
+			data := map[string]interface{}{
+				"validation": errorMessages,
+			}
+
+			temp, _ := template.ParseFiles("views/register.html")
+			temp.Execute(w, data)
+		} else {
+			// hass password dengan bcrpt
+			hassPass, _ := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+			user.Password = string(hassPass)
+
+			// insert ke database
+			_, err := userModel.Create(user)
+
+			var message string
+			if err != nil {
+				message = "Proses registrasi gagal: " + message
+			} else {
+				message = "Registrasi berhasil, silakan login!"
+			}
+
+			data := map[string]interface{}{
+				"pesan": message,
+			}
+
+			temp, _ := template.ParseFiles("views/register.html")
+			temp.Execute(w, data)
+
+		}
+	}
+}

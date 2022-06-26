@@ -10,6 +10,7 @@ func main() {
 	http.HandleFunc("/", auth.Index)
 	http.HandleFunc("/login", auth.Login)
 	http.HandleFunc("/logout", auth.Logout)
+	http.HandleFunc("/register", auth.Register)
 
 	fmt.Println("Server jalan di: http://localhost:3000")
 	http.ListenAndServe(":3000", nil)
